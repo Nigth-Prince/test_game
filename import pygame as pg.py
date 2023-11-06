@@ -1,5 +1,4 @@
 import random
-from typing import Any
 import pygame as pg
 from sql_bd import DateBaseSQL
 
@@ -13,8 +12,10 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 DARK_GREY = (50,50,50)
 WIDTH, HEIGHT = 600,600
-dog_surf = pg.image.load('C:/Users/pr1nce/Desktop/Game_MGTU-main/foto.jpeg')
-dog_rect = dog_surf.get_rect(bottomright=(600, 300))
+dog_surf = pg.image.load('foto.jpeg')
+dog_rect = dog_surf.get_rect(bottomright=(600, 600))
+
+
 class Apple(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
@@ -22,8 +23,9 @@ class Apple(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randrange(0,570)
         self.rect.y = random.randrange(0,570)
-
-    # def update(self):
+    def new_pos(self):
+        self.rect.x = random.randrange(0,570)
+        self.rect.y = random.randrange(0,570)
 
 class Player(pg.sprite.Sprite):
     def __init__(self,x,y):
@@ -32,13 +34,11 @@ class Player(pg.sprite.Sprite):
         self.y = y
         self.speed_x = 1
         self.speed_y = 0
-        self.image = pg.image.load('C:/Users/pr1nce/Desktop/Game_MGTU-main/hero.png')
+        self.image = pg.image.load('hero.png')
         self.rect = self.image.get_rect()
         self.rect. centerx = WIDTH / 2
         self.rect.bottom = HEIGHT - 100
     def update(self):
-        # for i in range(4): # новое для змейки
-            # win.blit(self.image,(self.rect.x-100*i,self.rect.y)) # новое для змейки
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
         key = pg.key.get_pressed()
@@ -58,8 +58,30 @@ class Player(pg.sprite.Sprite):
             if self.speed_y != -1:
                 self.speed_x = 0
                 self.speed_y = 1
-        
-        
+
+class Tail(pg.sprite.Sprite):
+    def __init__(self,*group):
+        super().__init__(*group)
+        self.speed_x = player.speed_x
+        self.speed_y = player.speed_y
+        self.image = pg.image.load('hero.png')
+        self.rect = self.image.get_rect()
+        self.rect.x = player.rect.x
+        self.rect.y = player.rect.y
+        self.direction_list = []
+        self.step = 0
+    def update(self):
+        if self.direction_list != [] and self.step < len(self.direction_list):
+            if self.direction_list[self.step][1] == [self.rect.x,self.rect.y]:
+                self.speed_x = self.direction_list[self.step][0][0]
+                self.speed_y = self.direction_list[self.step][0][1]
+                self.step += 1
+        self.rect.x += self.speed_x
+        self.rect.y += self.speed_y
+
+    def append_direction(self,dir,pos):
+        self.direction_list.append([dir,pos])
+        self.update()
 
 def draw_text(surf, text, x, y, size=FONT_SIZE, color=WHITE): # выведение
     font = pg.font.Font(font_name, size)
@@ -81,32 +103,12 @@ all_sprites = pg.sprite.Group()
 player = Player(300,300)
 all_sprites.add(player)
 apple = Apple()
-all_sprites.add(apple)
+apple_sprites = pg.sprite.Group()
+apple_sprites.add(apple)
+tail_sprites = pg.sprite.Group()
 name = ''
 start_game = True
 # полностью новый метод
-def see_db(name):
-    score = random.randrange(500)
-    SQL.set(name=name, score=score)
-    
-    while 1:
-        for i in pg.event.get():
-            if i.type == pg.QUIT:
-                exit()
-        win.fill((0,0,0))
-        offset = 150
-        step = 0
-        for u_name, u_score in SQL.get():
-            step += 1
-            draw_text(win,('='*26), WIDTH // 2, HEIGHT - offset-90*step)    
-            draw_text(win, (f'{u_name}                        {u_score}'), WIDTH // 2-10, HEIGHT - 150 - offset*2)
-            offset -= 30
-        step = 0
-        while step < 15:
-            step+=1
-            draw_text(win,('|'+ ' ' * 28 + '|' + ' ' * 28 + '|'), WIDTH // 2, HEIGHT - 170 - offset- 20*step)
-        draw_text(win,('='*26), WIDTH // 2, HEIGHT - 180)
-        pg.display.update()
 
 while start_game:
     for i in pg.event.get():
@@ -136,5 +138,15 @@ while 1:
     draw_text(win, f'Score:{score}', WIDTH // 2 , 15,color=(0,0,0))
     all_sprites.update()
     all_sprites.draw(win)
+    apple_sprites.update()
+    apple_sprites.draw(win)
+    if score != 0:
+        tail_sprites.update()
+        tail_sprites.draw(win)
+    collision = pg.sprite.spritecollide(player,apple_sprites, False, pg.sprite.collide_mask)
+    if collision:
+        score += 1
+        apple.new_pos()
+        Tail(tail_sprites)
     pg.display.update()
     pg.time.Clock().tick(40)
