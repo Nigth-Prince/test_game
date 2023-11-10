@@ -39,25 +39,39 @@ class Player(pg.sprite.Sprite):
         self.rect. centerx = WIDTH / 2
         self.rect.bottom = HEIGHT - 100
     def update(self):
+        # if collision:
+        #     self.rect.x = self.speed_x * 40
+        #     self.rect.y = self.speed_y * 40
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
+
         key = pg.key.get_pressed()
         if key[pg.K_LEFT]:
-            if self.speed_x != 1:
+            if self.speed_x != 1 and self.speed_x != -1:
+                for tail in tail_sprites.sprites():
+                    tail.append_direction([-1, 0], [self.rect.x, self.rect.y])
                 self.speed_x = -1
                 self.speed_y = 0
+
         elif key[pg.K_RIGHT]:
-            if self.speed_x != -1:
+            if self.speed_x != -1 and self.speed_x != 1:
+                for tail in tail_sprites.sprites():
+                    tail.append_direction([1, 0], [self.rect.x, self.rect.y])
                 self.speed_x = 1
-                self.speed_y = 0 
+                self.speed_y = 0
         elif key[pg.K_UP]:
-            if self.speed_y != 1:
+            if self.speed_y != 1 and self.speed_y != -1:
+                for tail in tail_sprites.sprites():
+                    tail.append_direction([0, -1], [self.rect.x, self.rect.y])
                 self.speed_x = 0
                 self.speed_y = -1
         elif key[pg.K_DOWN]:
-            if self.speed_y != -1:
+            if self.speed_y != -1 and self.speed_y != 1:
+                for tail in tail_sprites.sprites():
+                    tail.append_direction([0, 1], [self.rect.x, self.rect.y])
                 self.speed_x = 0
                 self.speed_y = 1
+
 
 class Tail(pg.sprite.Sprite):
     def __init__(self,*group):
@@ -150,3 +164,22 @@ while 1:
         Tail(tail_sprites)
     pg.display.update()
     pg.time.Clock().tick(40)
+
+SQL.set(name, score)
+while 1:
+    for i in pg.event.get():
+        if i.type == pg.QUIT:
+            exit()
+
+    win.fill(BLACK)
+    offset = 20
+    step = 0
+    for u_name, u_score in SQL.get():
+        step += 1
+        draw_text(win, (f'{u_name}: {u_score}'), WIDTH // 2 - 10, HEIGHT - 180 - offset * 2)
+        offset -= 20
+    step = 0
+    draw_text(win, 'Game Over', WIDTH // 2, HEIGHT - 450)
+    draw_text(win, f'Ваш результат: {score}', WIDTH // 2, HEIGHT // 2)
+    draw_text(win, 'Best scores:', WIDTH // 2, HEIGHT - 250)
+    pg.display.flip()
